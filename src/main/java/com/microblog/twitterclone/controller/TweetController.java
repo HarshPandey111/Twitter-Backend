@@ -79,11 +79,13 @@ public class TweetController {
     }
 
     // Like tweet
+    // Update this endpoint
     @PostMapping("/{tweetId}/like")
     public ResponseEntity<TweetResponseDTO> likeTweet(@PathVariable Long tweetId) {
         TweetResponseDTO tweet = tweetService.likeTweet(tweetId);
         return ResponseEntity.ok(tweet);
     }
+
 
     // Unlike tweet
     @DeleteMapping("/{tweetId}/unlike")

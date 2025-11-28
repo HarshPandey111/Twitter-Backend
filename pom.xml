@@ -15,7 +15,7 @@
     <description>Twitter Clone API using Spring Boot</description>
 
     <properties>
-        <java.version>22</java.version> <!-- ← CHANGED: 17 → 22 -->
+        <java.version>22</java.version>
     </properties>
 
     <dependencies>
@@ -62,19 +62,31 @@
             <optional>true</optional>
         </dependency>
 
-        <!-- Jackson Java 8 Date/Time Support --> <!-- ← ADDED -->
+        <!-- SLF4J Logging --> <!-- ← ADDED -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+
+        <!-- Jackson Java 8 Date/Time Support -->
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
         </dependency>
 
-        <!-- JSON Serialization (Already included via webmvc starter) -->
+        <!-- JSON Serialization -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
         </dependency>
 
-        <!-- Testing --> <!-- ← FIXED: One correct dependency -->
+        <!-- Kafka -->
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka</artifactId>
+        </dependency>
+
+        <!-- Testing -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -87,7 +99,10 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version> <!-- ← ADDED -->
                 <configuration>
+                    <source>22</source> <!-- ← ADDED -->
+                    <target>22</target> <!-- ← ADDED -->
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.projectlombok</groupId>

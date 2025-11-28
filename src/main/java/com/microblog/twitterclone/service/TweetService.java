@@ -13,6 +13,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.microblog.twitterclone.event.LikeEvent;
+import com.microblog.twitterclone.event.TweetCreatedEvent;
+import com.microblog.twitterclone.kafka.KafkaProducerService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -21,10 +24,13 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class TweetService {
-
+    // 💥 FIX 1: डुप्लीकेट घोषणाएं हटा दी गई हैं।
+    // @RequiredArgsConstructor इन सभी 'final' फील्ड्स को इंजेक्ट कर देगा।
     private final TweetRepository tweetRepository;
     private final UserRepository userRepository;
-    private final FeedService feedService;
+    private final KafkaProducerService kafkaProducer;
+    private final FeedService feedService; // यह वेरिएबल बचा रहा
+
     @Transactional
     public TweetResponseDTO createTweet(Long userId, TweetRequestDTO dto) {
         User author = userRepository.findById(userId)
@@ -39,8 +45,16 @@ public class TweetService {
 
         Tweet savedTweet = tweetRepository.save(tweet);
 
-        // NEW: Fan-out to all followers' feeds
-        feedService.fanOutTweet(savedTweet);
+        // CHANGED: Publish event to Kafka instead of direct fan-out
+        TweetCreatedEvent event = TweetCreatedEvent.builder()
+                .tweetId(savedTweet.getId())
+                .authorId(author.getId())
+                .authorUsername(author.getUsername()) // 💥 यह मेथड 'User.java' में होना चाहिए
+                .content(savedTweet.getContent())
+                .createdAt(savedTweet.getCreatedAt())
+                .build();
+
+        kafkaProducer.publishTweetCreated(event);
 
         return mapToDTO(savedTweet);
     }
@@ -112,8 +126,20 @@ public class TweetService {
         tweet.setLikeCount(tweet.getLikeCount() + 1);
         Tweet updatedTweet = tweetRepository.save(tweet);
 
+        // CHANGED: Publish like event to Kafka
+        LikeEvent event = LikeEvent.builder()
+                .tweetId(tweetId)
+                .userId(tweet.getAuthor().getId())
+                .username(tweet.getAuthor().getUsername()) // 💥 यह मेथड 'User.java' में होना चाहिए
+                .timestamp(java.time.LocalDateTime.now())
+                .eventType("LIKE")
+                .build();
+
+        kafkaProducer.publishLikeEvent(event);
+
         return mapToDTO(updatedTweet);
     }
+
 
     @Transactional
     public TweetResponseDTO unlikeTweet(Long tweetId) {
@@ -132,7 +158,7 @@ public class TweetService {
         return TweetResponseDTO.builder()
                 .id(tweet.getId())
                 .authorId(tweet.getAuthor().getId())
-                .authorUsername(tweet.getAuthor().getUsername())
+                .authorUsername(tweet.getAuthor().getUsername()) // 💥 यह मेथड 'User.java' में होना चाहिए
                 .content(tweet.getContent())
                 .likeCount(tweet.getLikeCount())
                 .retweetCount(tweet.getRetweetCount())
