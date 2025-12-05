@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Notification Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        #notifications {
+            border: 1px solid #ddd;
+            padding: 20px;
+            min-height: 300px;
+            margin-top: 20px;
+            background: #f9f9f9;
+        }
+        .notification {
+            padding: 10px;
+            margin: 10px 0;
+            border-left: 4px solid #4CAF50;
+            background: white;
+        }
+        .btn {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .connected { color: green; }
+        .disconnected { color: red; }
+    </style>
+</head>
+<body>
+<h1>🔔 Real-time Notifications Test</h1>
+
+<div>
+    <label>User ID:</label>
+    <input type="number" id="userId" value="1" />
+    <button class="btn" onclick="connect()">Connect</button>
+    <button class="btn" onclick="disconnect()">Disconnect</button>
+</div>
+
+<div class="status" id="status">Not connected</div>
+
+<h3>Notifications:</h3>
+<div id="notifications"></div>
+
+<script>
+    let stompClient = null;
+    let userId = 1;
+
+    function connect() {
+        userId = document.getElementById('userId').value;
+        const socket = new SockJS('http://localhost:8080/ws');
+        stompClient = Stomp.over(socket);
+
+        stompClient.connect({}, function(frame) {
+            console.log('Connected: ' + frame);
+            document.getElementById('status').innerHTML =
+                '<span class="connected">✅ Connected to WebSocket (User ' + userId + ')</span>';
+
+            // Subscribe to user-specific notifications
+            stompClient.subscribe('/topic/notifications/' + userId, function(notification) {
+                showNotification(JSON.parse(notification.body));
+            });
+
+            console.log('Subscribed to /topic/notifications/' + userId);
+        });
+    }
+
+    function disconnect() {
+        if (stompClient !== null) {
+            stompClient.disconnect();
+        }
+        document.getElementById('status').innerHTML =
+            '<span class="disconnected">❌ Disconnected</span>';
+        console.log('Disconnected');
+    }
+
+    function showNotification(notification) {
+        const notificationsDiv = document.getElementById('notifications');
+        const notificationElement = document.createElement('div');
+        notificationElement.className = 'notification';
+
+        const icon = notification.type === 'LIKE' ? '❤️' :
+                    notification.type === 'FOLLOW' ? '👤' : '🔔';
+
+        notificationElement.innerHTML =
+            '<strong>' + icon + ' ' + notification.type + '</strong><br>' +
+            notification.message + '<br>' +
+            '<small>' + notification.timestamp + '</small>';
+
+        notificationsDiv.insertBefore(notificationElement, notificationsDiv.firstChild);
+
+        // Play sound (optional)
+        console.log('🔔 New notification:', notification);
+    }
+
+    // Auto-connect on page load
+    window.onload = function() {
+        connect();
+    };
+</script>
+</body>
+</html>

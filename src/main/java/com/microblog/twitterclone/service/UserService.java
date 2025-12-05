@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     @Transactional
     public UserResponseDTO createUser(UserRegistrationDTO dto) {
@@ -40,6 +41,7 @@ public class UserService {
         return mapToDTO(savedUser);
     }
 
+    // Update followUser method
     @Transactional
     public void followUser(Long followerId, Long followingId) {
         if (followerId.equals(followingId)) {
@@ -52,13 +54,18 @@ public class UserService {
         User following = userRepository.findById(followingId)
                 .orElseThrow(() -> new RuntimeException("User to follow not found"));
 
-        // Add to following set
         if (follower.getFollowing().add(following)) {
             follower.setFollowingCount(follower.getFollowingCount() + 1);
             following.setFollowersCount(following.getFollowersCount() + 1);
 
             userRepository.save(follower);
             userRepository.save(following);
+
+            // ADDED: Send real-time notification
+            notificationService.createFollowNotification(
+                    followingId,
+                    follower.getUsername()
+            );
         }
     }
 
