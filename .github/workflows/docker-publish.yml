@@ -15,11 +15,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+<<<<<<< HEAD
       # Step 2: Set up JDK 22 (FIXED!)
       - name: Set up JDK 22
         uses: actions/setup-java@v4
         with:
           java-version: '22'
+=======
+      # Set up JDK 17
+      - name: Set up JDK 22
+         uses: actions/setup-java@v4
+      with:
+         java-version: '22'
+>>>>>>> ad21ed9a80a5a9a37efe7ba96ca882737e010e50
           distribution: 'temurin'
           cache: maven
 

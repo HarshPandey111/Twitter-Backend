@@ -1,25 +1,50 @@
-HELP.md
+##############################
+# MAVEN BUILD FILES
+##############################
 target/
-.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
+!.mvn/wrapper/maven-wrapper.jar
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
 
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
+##############################
+# SPRING BOOT ENV CONFIGS
+##############################
+.env
+*.env.local
+application-local.properties
+application-prod.properties
 
-### IntelliJ IDEA ###
-.idea
+##############################
+# LOG FILES
+##############################
+*.log
+
+##############################
+# IDE SPECIFIC FILES
+##############################
+
+# IntelliJ IDEA
+.idea/
 *.iws
 *.iml
 *.ipr
 
-### NetBeans ###
+# VS Code
+.vscode/
+
+# Eclipse / STS
+.project
+.classpath
+.factorypath
+.settings/
+.springBeans
+.sts4-cache
+.apt_generated
+
+##############################
+# NETBEANS
+##############################
 /nbproject/private/
 /nbbuild/
 /dist/
@@ -29,5 +54,13 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
-### VS Code ###
-.vscode/
+##############################
+# OS GENERATED FILES
+##############################
+.DS_Store
+Thumbs.db
+
+##############################
+# MISC
+##############################
+HELP.md
