@@ -6,45 +6,60 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import javax.sql.DataSource;
-import java.net.URI;
-import java.net.URISyntaxException;
 
 @Configuration
 public class DatabaseConfig {
     
     @Bean
-    public DataSource dataSource() throws URISyntaxException {
+    public DataSource dataSource() {
         String databaseUrl = System.getenv("DATABASE_URL");
         
-        String jdbcUrl;
+        String jdbcUrl = "jdbc:postgresql://localhost:5432/twitter"; // default fallback
         String username = "postgres";
         String password = "password123";
         
         if (databaseUrl != null && !databaseUrl.isEmpty()) {
-            // Railway provides DATABASE_URL in format: postgresql://user:password@host:port/database
-            // We need to convert it to JDBC format: jdbc:postgresql://host:port/database
-            
-            if (databaseUrl.startsWith("jdbc:")) {
-                // Already in JDBC format
-                jdbcUrl = databaseUrl;
-            } else if (databaseUrl.startsWith("postgresql://")) {
-                // Parse Railway's postgresql URL
-                URI uri = new URI("postgresql" + databaseUrl.substring(10));
-                username = uri.getUserInfo().split(":")[0];
-                password = uri.getUserInfo().split(":")[1];
-                
-                String host = uri.getHost();
-                int port = uri.getPort() != -1 ? uri.getPort() : 5432;
-                String database = uri.getPath().substring(1); // Remove leading slash
-                
-                jdbcUrl = String.format("jdbc:postgresql://%s:%d/%s", host, port, database);
-            } else {
-                // Fallback: assume it's already a valid URL, just add jdbc: prefix
-                jdbcUrl = "jdbc:" + databaseUrl;
+            try {
+                // Railway provides: postgresql://user:password@host:port/database
+                if (databaseUrl.startsWith("postgresql://")) {
+                    // Extract components using string manipulation
+                    String afterProtocol = databaseUrl.substring("postgresql://".length());
+                    
+                    // Split by @ to separate credentials from host
+                    String[] credentialsAndHost = afterProtocol.split("@", 2);
+                    
+                    if (credentialsAndHost.length == 2) {
+                        // Extract username and password
+                        String[] credentials = credentialsAndHost[0].split(":", 2);
+                        username = credentials[0];
+                        if (credentials.length > 1) {
+                            password = credentials[1];
+                        }
+                        
+                        // Extract host:port/database
+                        String hostPortDb = credentialsAndHost[1];
+                        String[] hostAndDb = hostPortDb.split("/", 2);
+                        String hostPort = hostAndDb[0];
+                        String dbName = hostAndDb.length > 1 ? hostAndDb[1] : "twitter";
+                        
+                        String[] hostParts = hostPort.split(":");
+                        String host = hostParts[0];
+                        int port = hostParts.length > 1 ? Integer.parseInt(hostParts[1]) : 5432;
+                        
+                        jdbcUrl = String.format("jdbc:postgresql://%s:%d/%s", host, port, dbName);
+                    }
+                } else if (databaseUrl.startsWith("jdbc:")) {
+                    // Already in JDBC format
+                    jdbcUrl = databaseUrl;
+                    // Try to extract username/password if available, otherwise use defaults
+                } else {
+                    // Unknown format, try prefixing with jdbc:
+                    jdbcUrl = "jdbc:" + databaseUrl;
+                }
+            } catch (Exception e) {
+                System.err.println("Error parsing DATABASE_URL: " + e.getMessage());
+                // Keep default fallback
             }
-        } else {
-            // Local development fallback
-            jdbcUrl = "jdbc:postgresql://localhost:5432/twitter";
         }
         
         HikariConfig config = new HikariConfig();
