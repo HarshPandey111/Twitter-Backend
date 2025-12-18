@@ -18,6 +18,9 @@ public class UserService {
     @Transactional
     public UserResponseDTO createUser(UserRegistrationDTO dto) {
         // Check if username already exists
+                if (userRepository.existsByUsername(dto.getUsername())) {
+                                throw new RuntimeException("Username already exists");
+                            }
 
         // Check if email already exists
         if (userRepository.existsByEmail(dto.getEmail())) {
